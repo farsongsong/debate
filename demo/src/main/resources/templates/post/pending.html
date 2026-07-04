@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('제출 완료')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="auth-main">
+  <div class="pending-card">
+    <div class="pending-icon">⏳</div>
+    <h1 class="pending-title" th:if="${param.created}">주제가 제출되었습니다!</h1>
+    <h1 class="pending-title" th:if="${param.updated}">수정이 제출되었습니다!</h1>
+    <p class="pending-desc">관리자가 내용을 검토한 후 승인하면 토론 목록에 공개됩니다.<br>보통 24시간 이내에 처리됩니다.</p>
+    <div class="pending-actions">
+      <a href="/posts" class="btn-primary">토론 목록 보기</a>
+      <a href="/posts/new" class="btn-secondary">다른 주제 제안하기</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(${user.nickname})}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="profile-page">
+  <div class="profile-card">
+    <div class="profile-avatar">
+      <img th:if="${user.profileImage != null}" th:src="${user.profileImage}" alt="프로필">
+      <div th:if="${user.profileImage == null}" class="avatar-placeholder-lg"
+           th:text="${user.nickname.substring(0,1)}">A</div>
+    </div>
+    <div class="profile-info">
+      <h1 class="profile-name" th:text="${user.nickname}">닉네임</h1>
+      <p class="profile-username" th:text="'@' + ${user.username}">@username</p>
+      <p class="profile-bio" th:if="${user.bio != null}" th:text="${user.bio}">소개</p>
+      <p class="profile-joined" th:text="'가입일: ' + ${#temporals.format(user.createdAt,'yyyy년 MM월 dd일')}">가입일</p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

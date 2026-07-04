@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('서버 오류')}" ></head>
+<body class="auth-page">
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="auth-main">
+  <div class="auth-card" style="text-align:center; padding: 3rem 2rem;">
+    <div style="font-size: 4rem; margin-bottom: 1rem;">⚠️</div>
+    <h1 class="auth-title">500</h1>
+    <p class="auth-subtitle">서버 오류가 발생했습니다.</p>
+    <p style="color: #718096; font-size: .9rem; margin-top: .5rem;">잠시 후 다시 시도해주세요.</p>
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+      <a href="javascript:history.back()" class="btn-primary" style="text-decoration:none; padding: .6rem 1.4rem; border-radius: .5rem;">← 뒤로가기</a>
+      <a href="/" class="btn-primary" style="text-decoration:none; padding: .6rem 1.4rem; border-radius: .5rem; background: #718096;">홈으로</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>

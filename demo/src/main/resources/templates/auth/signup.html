@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('회원가입')}"></head>
+<body class="auth-page">
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="auth-main">
+  <div class="auth-card">
+    <h1 class="auth-title">회원가입</h1>
+    <p class="auth-subtitle">토론 커뮤니티에 참여하세요</p>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+    <form th:action="@{/auth/signup}" method="post" th:object="${request}" class="auth-form" id="signupForm">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+      <!-- 아이디 -->
+      <div class="form-group">
+        <label for="username">아이디</label>
+        <div class="input-with-btn">
+          <input type="text" id="username" th:field="*{username}"
+                 placeholder="영문, 숫자 4-20자" required autocomplete="off">
+          <button type="button" class="btn-check" onclick="checkUsername()">중복 확인</button>
+        </div>
+        <span class="field-msg" id="usernameMsg"></span>
+      </div>
+
+      <!-- 이메일 -->
+      <div class="form-group">
+        <label for="email">이메일</label>
+        <div class="input-with-btn">
+          <input type="email" id="email" th:field="*{email}"
+                 placeholder="example@email.com" required autocomplete="off">
+          <button type="button" class="btn-check" id="sendCodeBtn" onclick="sendCode()">인증 코드 발송</button>
+        </div>
+        <span class="field-msg" id="emailMsg"></span>
+      </div>
+
+      <!-- 인증 코드 입력 -->
+      <div class="form-group" id="codeGroup" style="display:none">
+        <label for="codeInput">인증 코드</label>
+        <div class="input-with-btn">
+          <input type="text" id="codeInput" placeholder="메일로 받은 6자리 코드"
+                 maxlength="6" autocomplete="off" inputmode="numeric">
+          <button type="button" class="btn-check" id="confirmCodeBtn" onclick="confirmCode()">확인</button>
+        </div>
+        <span class="field-msg" id="codeMsg"></span>
+      </div>
+
+      <!-- 인증 완료 배너 -->
+      <div id="verifiedBanner" style="display:none;align-items:center;gap:.6rem;
+           padding:.75rem 1rem;background:#f0fff4;border:1.5px solid #68d391;
+           border-radius:.6rem;margin-bottom:.5rem;">
+        <span style="font-size:1.3rem;">✅</span>
+        <div>
+          <div style="font-size:.9rem;font-weight:700;color:#276749;">이메일 인증 완료</div>
+          <div id="verifiedEmail" style="font-size:.8rem;color:#38a169;"></div>
+        </div>
+      </div>
+
+      <!-- 닉네임 -->
+      <div class="form-group">
+        <label for="nickname">닉네임</label>
+        <div class="input-with-btn">
+          <input type="text" id="nickname" th:field="*{nickname}"
+                 placeholder="커뮤니티에서 사용할 이름" autocomplete="off">
+          <button type="button" class="btn-check" onclick="checkNickname()">중복 확인</button>
+        </div>
+        <span class="field-msg" id="nicknameMsg"></span>
+      </div>
+
+      <!-- 비밀번호 -->
+      <div class="form-group">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" th:field="*{password}"
+               placeholder="영문+숫자 8자 이상" required oninput="checkPasswordMatch()">
+      </div>
+
+      <!-- 비밀번호 확인 -->
+      <div class="form-group">
+        <label for="passwordConfirm">비밀번호 확인</label>
+        <input type="password" id="passwordConfirm" th:field="*{passwordConfirm}"
+               placeholder="비밀번호 재입력" required oninput="checkPasswordMatch()">
+        <span class="field-msg" id="passwordConfirmMsg"></span>
+      </div>
+
+      <button type="submit" class="btn-primary btn-full">가입하기</button>
+    </form>
+    <div class="auth-footer">
+      <span>이미 계정이 있으신가요?</span><a href="/auth/login">로그인</a>
+    </div>
+  </div>
+</main>
+
+<style>
+.input-with-btn { display: flex; gap: .5rem; }
+.input-with-btn input { flex: 1; min-width: 0; }
+.btn-check {
+  flex-shrink: 0; padding: .5rem .85rem;
+  background: #edf2f7; border: 1px solid #e2e8f0;
+  border-radius: .5rem; font-size: .82rem; font-weight: 600;
+  color: #4a5568; cursor: pointer; white-space: nowrap; transition: background .15s;
+}
+.btn-check:hover { background: #e2e8f0; }
+.btn-check:disabled { opacity: .5; cursor: not-allowed; }
+.field-msg { display: block; font-size: .8rem; margin-top: .35rem; min-height: 1.1rem; }
+.msg-ok   { color: #38a169; }
+.msg-err  { color: #e53e3e; }
+.msg-info { color: #3182ce; }
+</style>
+
+<script th:inline="javascript">
+const CSRF_TOKEN  = /*[[${_csrf.token}]]*/ '';
+const CSRF_HEADER = /*[[${_csrf.headerName}]]*/ '';
+
+const state = { username: false, email: false, nickname: true, password: false };
+
+function setMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'field-msg' + (type ? ' msg-' + type : '');
+}
+
+async function postForm(url, params) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      [CSRF_HEADER]: CSRF_TOKEN
+    },
+    body: new URLSearchParams(params).toString()
+  });
+}
+
+// ── 아이디 중복 확인 ──────────────────────────────────────────
+async function checkUsername() {
+  const val = document.getElementById('username').value.trim();
+  if (!val) { setMsg('usernameMsg', '아이디를 입력해주세요.', 'err'); return; }
+  if (!/^[a-zA-Z0-9]{4,20}$/.test(val)) {
+    setMsg('usernameMsg', '영문, 숫자 4-20자로 입력해주세요.', 'err');
+    state.username = false; return;
+  }
+  const res  = await fetch('/auth/check/username?username=' + encodeURIComponent(val));
+  const data = await res.json();
+  if (res.ok) { setMsg('usernameMsg', '✓ ' + data.message, 'ok'); state.username = true; }
+  else        { setMsg('usernameMsg', data.message, 'err');         state.username = false; }
+}
+
+// ── 인증 코드 발송 ────────────────────────────────────────────
+function sendCode() {
+  const email = document.getElementById('email').value.trim();
+  if (!email) { setMsg('emailMsg', '이메일을 입력해주세요.', 'err'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setMsg('emailMsg', '올바른 이메일 형식을 입력해주세요.', 'err'); return;
+  }
+
+  const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true;
+
+  setMsg('emailMsg', '✉ 인증 코드를 발송했습니다. 메일함을 확인해주세요. (10분 유효)', 'ok');
+  document.getElementById('codeGroup').style.display = 'block';
+  document.getElementById('codeInput').focus();
+  startCooldown(btn, 60);
+
+  postForm('/auth/send-verification', { email })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        setMsg('emailMsg', data.message, 'err');
+        document.getElementById('codeGroup').style.display = 'none';
+        state.email = false;
+      }
+    })
+    .catch(() => {
+      setMsg('emailMsg', '발송 중 오류가 발생했습니다. 다시 시도해주세요.', 'err');
+    });
+}
+
+function startCooldown(btn, sec) {
+  const timer = setInterval(() => {
+    btn.textContent = '재발송 (' + (--sec) + 's)';
+    if (sec <= 0) {
+      clearInterval(timer);
+      btn.disabled = false;
+      btn.textContent = '재발송';
+    }
+  }, 1000);
+}
+
+// ── 인증 코드 확인 (함수명 충돌 방지: confirmCode) ────────────
+async function confirmCode() {
+  const email = document.getElementById('email').value.trim();
+  const code  = document.getElementById('codeInput').value.trim();
+  if (!code) { setMsg('codeMsg', '코드를 입력해주세요.', 'err'); return; }
+
+  const btn = document.getElementById('confirmCodeBtn');
+  btn.disabled = true;
+  btn.textContent = '확인 중...';
+
+  const res  = await postForm('/auth/verify-code', { email, code });
+  const data = await res.json();
+
+  if (res.ok) {
+    document.getElementById('codeGroup').style.display = 'none';
+    const banner = document.getElementById('verifiedBanner');
+    banner.style.display = 'flex';
+    document.getElementById('verifiedEmail').textContent = email;
+    setMsg('emailMsg', '', '');
+    state.email = true;
+  } else {
+    setMsg('codeMsg', data.message, 'err');
+    btn.disabled = false;
+    btn.textContent = '확인';
+    state.email = false;
+  }
+}
+
+// ── 닉네임 중복 확인 ──────────────────────────────────────────
+async function checkNickname() {
+  const val = document.getElementById('nickname').value.trim();
+  if (!val) { setMsg('nicknameMsg', '', ''); state.nickname = true; return; }
+  const res  = await fetch('/auth/check/nickname?nickname=' + encodeURIComponent(val));
+  const data = await res.json();
+  if (res.ok) { setMsg('nicknameMsg', '✓ ' + data.message, 'ok'); state.nickname = true; }
+  else        { setMsg('nicknameMsg', data.message, 'err');         state.nickname = false; }
+}
+
+// ── 비밀번호 일치 확인 ────────────────────────────────────────
+function checkPasswordMatch() {
+  const pw  = document.getElementById('password').value;
+  const pw2 = document.getElementById('passwordConfirm').value;
+  if (!pw2) { setMsg('passwordConfirmMsg', '', ''); state.password = false; return; }
+  if (pw === pw2) {
+    setMsg('passwordConfirmMsg', '✓ 비밀번호가 일치합니다.', 'ok'); state.password = true;
+  } else {
+    setMsg('passwordConfirmMsg', '비밀번호가 일치하지 않습니다.', 'err'); state.password = false;
+  }
+}
+
+// ── 폼 제출 전 최종 검증 ──────────────────────────────────────
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+  if (!state.username) { e.preventDefault(); setMsg('usernameMsg', '아이디 중복 확인을 해주세요.', 'err'); return; }
+  if (!state.email)    { e.preventDefault(); setMsg('emailMsg', '이메일 인증을 완료해주세요.', 'err'); return; }
+  if (!state.nickname) { e.preventDefault(); setMsg('nicknameMsg', '닉네임 중복 확인을 해주세요.', 'err'); return; }
+  if (!state.password) { e.preventDefault(); setMsg('passwordConfirmMsg', '비밀번호가 일치하지 않습니다.', 'err'); return; }
+});
+</script>
+</body>
+</html>

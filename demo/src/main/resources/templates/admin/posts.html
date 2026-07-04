@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('게시글 관리')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h2 class="sidebar-title">관리자</h2>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="sidebar-link">대시보드</a>
+      <a href="/admin/pending" class="sidebar-link">
+        승인 대기 <span class="badge" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</span>
+      </a>
+      <a href="/admin/posts" class="sidebar-link active">게시글 관리</a>
+      <a href="/admin/users" class="sidebar-link">사용자 관리</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <h1 class="admin-title">게시글 관리</h1>
+    <div class="filter-tabs">
+      <a th:href="@{/admin/posts}" th:classappend="${currentStatus == null} ? ' active' : ''" class="filter-tab">전체</a>
+      <a th:href="@{/admin/posts(status='PUBLISHED')}" th:classappend="${currentStatus == 'PUBLISHED'} ? ' active' : ''" class="filter-tab">공개</a>
+      <a th:href="@{/admin/posts(status='PENDING')}" th:classappend="${currentStatus == 'PENDING'} ? ' active' : ''" class="filter-tab">대기</a>
+      <a th:href="@{/admin/posts(status='REJECTED')}" th:classappend="${currentStatus == 'REJECTED'} ? ' active' : ''" class="filter-tab">거부</a>
+    </div>
+    <table class="admin-table">
+      <thead>
+      <tr><th>제목</th><th>작성자</th><th>상태</th><th>날짜</th><th>관리</th></tr>
+      </thead>
+      <tbody>
+      <tr th:each="post : ${posts.content}">
+        <td>
+          <a th:if="${post.status.name() == 'PUBLISHED'}"
+             th:href="@{/posts/{id}(id=${post.id})}"
+             th:text="${post.title}">제목</a>
+          <span th:unless="${post.status.name() == 'PUBLISHED'}"
+                th:text="${post.title}">제목</span>
+        </td>
+        <td th:text="${post.author.nickname != null} ? ${post.author.nickname} : ${post.author.username}">작성자</td>
+        <td>
+          <span th:if="${post.status.name() == 'PUBLISHED'}" class="status-badge status-published">공개</span>
+          <span th:if="${post.status.name() == 'PENDING'}" class="status-badge status-pending">대기</span>
+          <span th:if="${post.status.name() == 'REJECTED'}" class="status-badge status-rejected">거부</span>
+          <span th:if="${post.status.name() == 'DELETED'}" class="status-badge status-deleted">삭제</span>
+        </td>
+        <td th:text="${#temporals.format(post.createdAt,'MM.dd')}">날짜</td>
+        <td class="td-actions">
+          <form th:if="${post.status.name() == 'PENDING'}"
+                th:action="@{/admin/posts/{id}/approve(id=${post.id})}" method="post" style="display:inline">
+            <button type="submit" class="btn-sm btn-approve">승인</button>
+          </form>
+          <form th:action="@{/admin/posts/{id}/delete(id=${post.id})}" method="post" style="display:inline"
+                onsubmit="return confirm('삭제하시겠습니까?')">
+            <button type="submit" class="btn-sm btn-danger">삭제</button>
+          </form>
+        </td>
+      </tr>
+      <tr th:if="${posts.empty}"><td colspan="5" class="empty-td">게시글이 없습니다</td></tr>
+      </tbody>
+    </table>
+    <div class="pagination" th:if="${posts.totalPages > 1}">
+      <a th:if="${posts.hasPrevious()}" th:href="@{/admin/posts(page=${posts.number-1},status=${currentStatus})}" class="page-btn">← 이전</a>
+      <span class="page-info" th:text="${posts.number+1} + ' / ' + ${posts.totalPages}"></span>
+      <a th:if="${posts.hasNext()}" th:href="@{/admin/posts(page=${posts.number+1},status=${currentStatus})}" class="page-btn">다음 →</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

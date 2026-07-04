@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('내 게시글')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="post-list-page">
+  <div class="page-header">
+    <h1 class="page-title">내 <span class="accent">게시글</span></h1>
+    <p class="page-desc">내가 제안한 토론 주제 목록입니다</p>
+  </div>
+
+  <div th:if="${param.created}" class="alert alert-success" style="margin-bottom:1rem;">
+    주제가 제출되었습니다. 관리자 검토 후 공개됩니다.
+  </div>
+  <div th:if="${param.updated}" class="alert alert-success" style="margin-bottom:1rem;">
+    수정되었습니다. 관리자 재검토 후 공개됩니다.
+  </div>
+
+  <div class="list-toolbar" style="justify-content:flex-end;">
+    <a href="/posts/new" class="btn-write">+ 주제 제안</a>
+  </div>
+
+  <div class="post-list">
+    <article class="list-item" th:each="post : ${posts}">
+      <div class="list-item-left">
+        <!-- 상태 배지 -->
+        <div style="margin-bottom:.4rem;">
+          <span th:if="${post.status == 'PUBLISHED'}"
+                style="font-size:.75rem;font-weight:700;color:#38a169;background:#f0fff4;padding:.2rem .6rem;border-radius:99px;">✓ 승인됨</span>
+          <span th:if="${post.status == 'PENDING'}"
+                style="font-size:.75rem;font-weight:700;color:#d97706;background:#fffbeb;padding:.2rem .6rem;border-radius:99px;">⏳ 검토 중</span>
+          <span th:if="${post.status == 'REJECTED'}"
+                style="font-size:.75rem;font-weight:700;color:#e53e3e;background:#fff5f5;padding:.2rem .6rem;border-radius:99px;">✗ 반려됨</span>
+        </div>
+        <div class="list-tags">
+          <span th:each="tag : ${post.tags}" class="tag" th:text="'#' + tag"></span>
+        </div>
+        <h2 class="list-title">
+          <a th:if="${post.status == 'PUBLISHED'}"
+             th:href="@{/posts/{id}(id=${post.id})}" th:text="${post.title}">제목</a>
+          <span th:unless="${post.status == 'PUBLISHED'}" th:text="${post.title}"
+                style="color:#4a5568;">제목</span>
+        </h2>
+        <p th:if="${post.status == 'REJECTED' and post.rejectReason != null}"
+           style="font-size:.82rem;color:#e53e3e;margin:.3rem 0 0;">
+          반려 사유: <span th:text="${post.rejectReason}"></span>
+        </p>
+        <div class="list-meta">
+          <span th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd')}">날짜</span>
+          <span th:if="${post.status == 'PUBLISHED'}">
+            <span class="dot">·</span>조회 <strong th:text="${post.viewCount}">0</strong>
+          </span>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;flex-shrink:0;">
+        <a th:href="@{/posts/{id}/edit(id=${post.id})}"
+           style="padding:.4rem .9rem;background:#edf2f7;border-radius:.4rem;font-size:.82rem;font-weight:600;color:#4a5568;text-decoration:none;">수정</a>
+        <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post"
+              onsubmit="return confirm('정말 삭제하시겠습니까?')">
+          <button type="submit"
+                  style="padding:.4rem .9rem;background:#fff5f5;border:none;border-radius:.4rem;font-size:.82rem;font-weight:600;color:#e53e3e;cursor:pointer;">삭제</button>
+        </form>
+      </div>
+    </article>
+    <div th:if="${posts.empty}" class="empty-state">
+      <p>아직 제안한 토론 주제가 없습니다.</p>
+      <a href="/posts/new" class="btn-primary">주제 제안하기</a>
+    </div>
+  </div>
+
+  <div class="pagination" th:if="${posts.totalPages > 1}">
+    <a th:if="${posts.hasPrevious()}"
+       th:href="@{/posts/my(page=${posts.number-1})}" class="page-btn">← 이전</a>
+    <span class="page-info" th:text="${posts.number+1} + ' / ' + ${posts.totalPages}"></span>
+    <a th:if="${posts.hasNext()}"
+       th:href="@{/posts/my(page=${posts.number+1})}" class="page-btn">다음 →</a>
+  </div>
+</main>
+</body>
+</html>

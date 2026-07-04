@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('사용자 관리')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h2 class="sidebar-title">관리자</h2>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="sidebar-link">대시보드</a>
+      <a href="/admin/pending" class="sidebar-link">
+        승인 대기 <span class="badge" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</span>
+      </a>
+      <a href="/admin/posts" class="sidebar-link">게시글 관리</a>
+      <a href="/admin/users" class="sidebar-link active">사용자 관리</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <h1 class="admin-title">사용자 관리</h1>
+    <table class="admin-table">
+      <thead><tr><th>아이디</th><th>닉네임</th><th>이메일</th><th>역할</th><th>가입일</th><th>관리</th></tr></thead>
+      <tbody>
+        <tr th:each="user : ${users.content}">
+          <td th:text="${user.username}">아이디</td>
+          <td th:text="${user.nickname != null} ? ${user.nickname} : '-'">닉네임</td>
+          <td th:text="${user.email}">이메일</td>
+          <td>
+            <span th:classappend="${user.role.name() == 'ADMIN'} ? 'role-admin' : 'role-user'"
+                  th:text="${user.role.name() == 'ADMIN'} ? '관리자' : '일반'">역할</span>
+          </td>
+          <td th:text="${#temporals.format(user.createdAt,'MM.dd')}">날짜</td>
+          <td class="td-actions">
+            <form th:if="${user.role.name() != 'ADMIN'}"
+                  th:action="@{/admin/users/{id}/promote(id=${user.id})}" method="post" style="display:inline">
+              <button type="submit" class="btn-sm btn-approve">관리자 승격</button>
+            </form>
+            <form th:action="@{/admin/users/{id}/disable(id=${user.id})}" method="post" style="display:inline"
+                  onsubmit="return confirm('비활성화 하시겠습니까?')">
+              <button type="submit" class="btn-sm btn-danger">비활성화</button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="pagination" th:if="${users.totalPages > 1}">
+      <a th:if="${users.hasPrevious()}" th:href="@{/admin/users(page=${users.number-1})}" class="page-btn">← 이전</a>
+      <span class="page-info" th:text="${users.number+1} + ' / ' + ${users.totalPages}"></span>
+      <a th:if="${users.hasNext()}" th:href="@{/admin/users(page=${users.number+1})}" class="page-btn">다음 →</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

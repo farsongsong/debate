@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('프로필 설정')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="form-page">
+  <div class="form-container">
+    <h1>프로필 설정</h1>
+    <div th:if="${param.success}"   class="alert alert-success">프로필이 업데이트되었습니다.</div>
+    <div th:if="${param.pwSuccess}" class="alert alert-success">비밀번호가 변경되었습니다.</div>
+    <div th:if="${param.pwError}"   class="alert alert-error"   th:text="${param.pwError}">오류</div>
+
+    <!-- 프로필 수정 -->
+    <form th:action="@{/users/settings}" method="post" enctype="multipart/form-data" class="post-form">
+      <div class="form-group">
+        <label>닉네임</label>
+        <input type="text" name="nickname" th:value="${user.nickname}" placeholder="닉네임">
+      </div>
+      <div class="form-group">
+        <label>자기소개</label>
+        <textarea name="bio" rows="4" th:text="${user.bio}" placeholder="자기소개를 입력해주세요"></textarea>
+      </div>
+      <div class="form-group">
+        <label>프로필 사진</label>
+        <div th:if="${user.profileImage != null}" style="margin-bottom:.5rem;">
+          <img th:src="${user.profileImage}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
+        </div>
+        <input type="file" name="profileImage" accept="image/jpeg,image/png,image/gif,image/webp">
+        <small style="color:#718096;font-size:.8rem;">jpg, png, gif, webp / 최대 5MB</small>
+      </div>
+      <button type="submit" class="btn-primary">저장</button>
+    </form>
+
+    <hr style="margin:2rem 0;border:none;border-top:1px solid #e2e8f0;">
+
+    <!-- 비밀번호 변경 -->
+    <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem;">비밀번호 변경</h2>
+    <form th:action="@{/users/password}" method="post" class="post-form" id="pwForm">
+      <div class="form-group">
+        <label>현재 비밀번호</label>
+        <input type="password" name="currentPassword" required>
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호</label>
+        <input type="password" id="newPw" name="newPassword" placeholder="영문+숫자 8자 이상"
+               required oninput="checkNewPwMatch()">
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호 확인</label>
+        <input type="password" id="newPwConfirm" name="newPasswordConfirm"
+               required oninput="checkNewPwMatch()">
+        <span class="field-msg" id="newPwMsg" style="font-size:.8rem;margin-top:.3rem;display:block;"></span>
+      </div>
+      <button type="submit" class="btn-primary">비밀번호 변경</button>
+    </form>
+  </div>
+</main>
+<style>
+.field-msg { min-height:1rem; }
+.msg-ok  { color:#38a169; }
+.msg-err { color:#e53e3e; }
+</style>
+<script>
+function checkNewPwMatch() {
+  const pw1 = document.getElementById('newPw').value;
+  const pw2 = document.getElementById('newPwConfirm').value;
+  const msg = document.getElementById('newPwMsg');
+  if (!pw2) { msg.textContent=''; msg.className='field-msg'; return; }
+  if (pw1===pw2) { msg.textContent='✓ 비밀번호가 일치합니다.'; msg.className='field-msg msg-ok'; }
+  else           { msg.textContent='비밀번호가 일치하지 않습니다.'; msg.className='field-msg msg-err'; }
+}
+document.getElementById('pwForm').addEventListener('submit', function(e) {
+  const pw1 = document.getElementById('newPw').value;
+  const pw2 = document.getElementById('newPwConfirm').value;
+  if (pw1 !== pw2) { e.preventDefault(); checkNewPwMatch(); }
+});
+</script>
+</body>
+</html>

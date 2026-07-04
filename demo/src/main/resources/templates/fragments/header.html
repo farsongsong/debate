@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${title} + ' — Debate'">Debate</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+</head>
+
+<nav th:fragment="nav" class="nav">
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">
+            <span class="logo-text">DEBATE</span><span class="logo-dot">.</span>
+        </a>
+        <div class="nav-links">
+            <a href="/posts" class="nav-link">토론</a>
+            <a href="/posts?tag=시사" class="nav-link">시사</a>
+            <a href="/posts?tag=사회" class="nav-link">사회</a>
+            <a href="/posts?tag=정치" class="nav-link">정치</a>
+        </div>
+        <div class="nav-actions">
+            <div sec:authorize="isAuthenticated()" style="display:flex;align-items:center;gap:.5rem;">
+                <a href="/posts/my" class="nav-link" style="font-size:.85rem;">내 글</a>
+                <a th:href="@{/users/{id}(id=${#authentication.principal.user.id})}"
+                   class="nav-user"
+                   th:text="${#authentication.principal.user.nickname != null}
+                            ? ${#authentication.principal.user.nickname}
+                            : ${#authentication.principal.user.username}">사용자</a>
+                <a sec:authorize="hasRole('ADMIN')" href="/admin" class="btn-admin">관리자</a>
+                <form th:action="@{/auth/logout}" method="post" style="display:inline">
+                    <button type="submit" class="btn-logout">로그아웃</button>
+                </form>
+            </div>
+            <div sec:authorize="isAnonymous()">
+                <a href="/auth/login" class="btn-login">로그인</a>
+                <a href="/auth/signup" class="btn-signup">가입</a>
+            </div>
+        </div>
+    </div>
+</nav>
+</html>

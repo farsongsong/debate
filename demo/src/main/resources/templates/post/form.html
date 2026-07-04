@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(${post != null} ? '주제 수정' : '주제 제안')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="form-page">
+  <div class="form-container">
+    <div class="form-notice">
+      <span class="notice-icon">📋</span>
+      <div>
+        <strong>관리자 검토 안내</strong>
+        <p>제출된 토론 주제는 관리자 검토 후 승인되면 공개됩니다. 보통 24시간 이내에 처리됩니다.</p>
+      </div>
+    </div>
+    <h1 th:text="${post != null} ? '토론 주제 수정' : '새 토론 주제 제안'">글쓰기</h1>
+    <form th:action="${post != null} ? @{/posts/{id}/edit(id=${post.id})} : @{/posts/new}"
+          method="post" enctype="multipart/form-data" class="post-form">
+      <div class="form-group">
+        <label>제목 <span class="required">*</span></label>
+        <input type="text" name="title" th:value="${post?.title}" placeholder="토론 주제를 명확하게 작성해주세요" required>
+      </div>
+      <div class="form-group">
+        <label>태그</label>
+        <input type="text" id="tagInput" placeholder="태그 입력 후 Enter (예: 시사, 정치, 사회)">
+        <div id="tagList" class="tag-list"></div>
+        <div id="hiddenTags"></div>
+      </div>
+      <div class="form-group">
+        <label>한 줄 요약</label>
+        <input type="text" name="summary" th:value="${post?.summary}" placeholder="토론 주제를 한 줄로 요약해주세요">
+      </div>
+      <div class="form-group">
+        <label>썸네일 이미지</label>
+        <input type="file" name="thumbnail" accept="image/*">
+      </div>
+      <div class="form-group">
+        <label>내용 <span class="required">*</span></label>
+        <textarea name="content" rows="20" placeholder="토론 배경, 찬반 관점, 관련 자료 등을 상세히 작성해주세요..." required
+                  th:text="${post?.content}"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary"
+                th:text="${post != null} ? '수정 제출' : '검토 요청'">제출</button>
+        <a href="javascript:history.back()" class="btn-cancel">취소</a>
+      </div>
+    </form>
+  </div>
+</main>
+<script th:src="@{/js/post-form.js}"></script>
+</body>
+</html>

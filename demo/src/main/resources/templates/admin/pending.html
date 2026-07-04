@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('승인 대기 목록')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h2 class="sidebar-title">관리자</h2>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="sidebar-link">대시보드</a>
+      <a href="/admin/pending" class="sidebar-link active">
+        승인 대기 <span class="badge" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</span>
+      </a>
+      <a href="/admin/posts" class="sidebar-link">게시글 관리</a>
+      <a href="/admin/users" class="sidebar-link">사용자 관리</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <h1 class="admin-title">승인 대기 목록</h1>
+    <div th:if="${param.approved}" class="alert alert-success">게시글이 승인되었습니다.</div>
+    <div th:if="${param.rejected}" class="alert alert-error">게시글이 거부되었습니다.</div>
+
+    <div class="pending-list">
+      <div class="pending-item" th:each="post : ${posts.content}">
+        <div class="pending-item-header">
+          <h3 class="pending-item-title" th:text="${post.title}">제목</h3>
+          <span class="status-badge status-pending">대기중</span>
+        </div>
+        <div class="pending-item-meta">
+          <span th:text="${post.author.nickname != null} ? ${post.author.nickname} : ${post.author.username}">작성자</span>
+          <span class="dot">·</span>
+          <span th:text="${#temporals.format(post.createdAt,'yyyy.MM.dd HH:mm')}">날짜</span>
+        </div>
+        <p class="pending-item-summary" th:text="${post.summary}">요약</p>
+        <div class="pending-item-content" th:text="${#strings.abbreviate(post.content, 300)}">내용</div>
+        <div class="pending-item-actions">
+          <form th:action="@{/admin/posts/{id}/approve(id=${post.id})}" method="post" style="display:inline">
+            <button type="submit" class="btn-approve-lg">✓ 승인하기</button>
+          </form>
+          <form th:action="@{/admin/posts/{id}/reject(id=${post.id})}" method="post" class="reject-form">
+            <input type="text" name="reason" placeholder="거부 사유를 입력하세요" class="reject-input">
+            <button type="submit" class="btn-reject-lg">✕ 거부하기</button>
+          </form>
+        </div>
+      </div>
+      <div th:if="${posts.empty}" class="empty-state">
+        <p>✓ 대기 중인 게시글이 없습니다</p>
+      </div>
+    </div>
+    <div class="pagination" th:if="${posts.totalPages > 1}">
+      <a th:if="${posts.hasPrevious()}" th:href="@{/admin/pending(page=${posts.number-1})}" class="page-btn">← 이전</a>
+      <span class="page-info" th:text="${posts.number+1} + ' / ' + ${posts.totalPages}"></span>
+      <a th:if="${posts.hasNext()}" th:href="@{/admin/pending(page=${posts.number+1})}" class="page-btn">다음 →</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('토론 목록')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="post-list-page">
+  <div class="page-header">
+    <h1 class="page-title">토론 <span class="accent">광장</span></h1>
+    <p class="page-desc">관리자가 검증한 토론 주제들입니다</p>
+  </div>
+  <div class="list-toolbar">
+    <form class="search-form" method="get" action="/posts">
+      <input type="text" name="q" th:value="${searchQuery}" placeholder="검색어 입력..." class="search-input">
+      <button type="submit" class="search-btn">검색</button>
+    </form>
+    <a href="/posts/new" class="btn-write">+ 주제 제안</a>
+  </div>
+  <div th:if="${searchQuery}" class="search-result-label">"<span th:text="${searchQuery}"></span>" 검색 결과</div>
+  <div th:if="${currentTag}" class="search-result-label">#<span th:text="${currentTag}"></span> 태그 목록</div>
+
+  <div class="post-list">
+    <article class="list-item" th:each="post : ${posts}"
+             th:onclick="'location.href=\'/posts/' + ${post.id} + '\''">
+      <div class="list-item-left">
+        <div class="list-tags">
+          <a th:each="tag : ${post.tags}"
+             th:href="@{/posts(tag=${tag})}"
+             class="tag"
+             th:text="'#' + tag"
+             onclick="event.stopPropagation()"></a>
+        </div>
+        <h2 class="list-title">
+          <a th:href="@{/posts/{id}(id=${post.id})}"
+             th:text="${post.title}"
+             onclick="event.stopPropagation()">제목</a>
+        </h2>
+        <p class="list-summary" th:text="${post.summary}">요약</p>
+        <div class="list-meta">
+          <span th:text="${post.authorName}">작성자</span>
+          <span class="dot">·</span>
+          <span th:text="${#temporals.format(post.createdAt, 'yyyy.MM.dd')}">날짜</span>
+          <span class="dot">·</span>
+          <span>조회 <strong th:text="${post.viewCount}">0</strong></span>
+        </div>
+      </div>
+      <div class="list-item-thumb" th:if="${post.thumbnail != null}">
+        <img th:src="${post.thumbnail}" alt="썸네일">
+      </div>
+    </article>
+    <div th:if="${posts.empty}" class="empty-state">
+      <p>아직 승인된 토론이 없습니다.</p>
+      <a href="/posts/new" class="btn-primary">주제 제안하기</a>
+    </div>
+  </div>
+  <div class="pagination" th:if="${posts.totalPages > 1}">
+    <a th:if="${posts.hasPrevious()}"
+       th:href="@{/posts(page=${posts.number-1},q=${searchQuery},tag=${currentTag})}"
+       class="page-btn">← 이전</a>
+    <span class="page-info" th:text="${posts.number+1} + ' / ' + ${posts.totalPages}"></span>
+    <a th:if="${posts.hasNext()}"
+       th:href="@{/posts(page=${posts.number+1},q=${searchQuery},tag=${currentTag})}"
+       class="page-btn">다음 →</a>
+  </div>
+</main>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

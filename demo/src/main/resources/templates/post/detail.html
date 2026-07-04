@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/header :: head(${post.title})}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<main class="post-detail-page">
+  <article class="post-article">
+    <header class="post-header">
+      <div class="post-tags">
+        <a th:each="tag : ${post.tags}" th:href="@{/posts(tag=${tag})}" class="tag" th:text="'#' + tag"></a>
+      </div>
+      <h1 class="post-title" th:text="${post.title}">제목</h1>
+      <div class="post-meta">
+        <a th:href="@{/users/{id}(id=${post.authorId})}" class="post-author" th:text="${post.authorName}">작성자</a>
+        <span class="dot">·</span>
+        <span th:text="${#temporals.format(post.createdAt,'yyyy년 MM월 dd일')}">날짜</span>
+        <span class="dot">·</span>
+        <span>조회 <strong th:text="${post.viewCount}">0</strong></span>
+      </div>
+      <!-- 수정/삭제 버튼: 본인 또는 Admin -->
+      <div sec:authorize="isAuthenticated()">
+        <div th:if="${#authentication.principal.user.id == post.authorId or isAdmin}" class="post-actions">
+          <a th:if="${#authentication.principal.user.id == post.authorId}"
+             th:href="@{/posts/{id}/edit(id=${post.id})}" class="btn-edit">수정</a>
+          <form th:action="@{/posts/{id}/delete(id=${post.id})}" method="post"
+                style="display:inline" onsubmit="return confirm('정말 삭제하시겠습니까?')">
+            <button type="submit" class="btn-delete">삭제</button>
+          </form>
+        </div>
+      </div>
+    </header>
+
+    <div class="post-thumbnail" th:if="${post.thumbnail != null}">
+      <img th:src="${post.thumbnail}" alt="썸네일">
+    </div>
+    <div class="post-content" th:utext="${post.content}">내용</div>
+
+    <!-- 투표 섹션 -->
+    <div class="vote-section">
+      <h3 class="vote-title">어느 쪽 의견에 동의하시나요?</h3>
+      <div class="vote-stats">
+        <span class="vote-stat-agree" th:text="'👍 찬성 ' + ${voteResult.agreePercent} + '%'">찬성 50%</span>
+        <span class="vote-stat-total" th:text="${voteResult.total} + '명 참여'">0명 참여</span>
+        <span class="vote-stat-disagree" th:text="'반대 ' + ${voteResult.disagreePercent} + '% 👎'">반대 50%</span>
+      </div>
+      <div class="vote-bar">
+        <div class="vote-bar-agree" th:style="'width:' + ${voteResult.agreePercent} + '%'"></div>
+        <div class="vote-bar-disagree" th:style="'width:' + ${voteResult.disagreePercent} + '%'"></div>
+      </div>
+      <div sec:authorize="isAuthenticated()" class="vote-buttons">
+        <button class="vote-btn vote-agree" id="voteAgree"
+                th:classappend="${myVote == 'AGREE'} ? ' voted' : ''"
+                th:data-post-id="${post.id}">
+          👍 찬성
+          <span class="vote-count" th:text="${voteResult.agree}">0</span>
+        </button>
+        <button class="vote-btn vote-disagree" id="voteDisagree"
+                th:classappend="${myVote == 'DISAGREE'} ? ' voted' : ''"
+                th:data-post-id="${post.id}">
+          👎 반대
+          <span class="vote-count" th:text="${voteResult.disagree}">0</span>
+        </button>
+      </div>
+      <div sec:authorize="isAnonymous()" class="vote-login-prompt">
+        <a href="/auth/login">로그인</a>하고 투표에 참여하세요
+      </div>
+    </div>
+
+    <!-- 좋아요 -->
+    <div sec:authorize="isAuthenticated()" class="post-like">
+      <button class="like-btn" id="likeBtn" th:data-post-id="${post.id}"
+              th:classappend="${liked} ? ' liked' : ''">
+        <span>♥</span>
+        <span id="likeCount" th:text="${likeCount}">0</span>
+      </button>
+    </div>
+  </article>
+
+  <!-- 댓글 -->
+  <section class="comment-section">
+    <h3 class="comment-title">의견 <span th:text="${#lists.size(comments)}">0</span></h3>
+
+    <div class="comment-tabs">
+      <button class="comment-tab active-all" data-tab="ALL">전체</button>
+      <button class="comment-tab" data-tab="AGREE">👍 찬성 의견</button>
+      <button class="comment-tab" data-tab="DISAGREE">👎 반대 의견</button>
+    </div>
+
+    <div sec:authorize="isAuthenticated()">
+      <div class="comment-form-wrap">
+        <div class="comment-side-select">
+          <span style="font-size:.85rem;font-weight:600;color:#4a5568;margin-right:.3rem;">입장 선택:</span>
+          <button class="side-btn active-agree" data-side="AGREE">👍 찬성</button>
+          <button class="side-btn" data-side="DISAGREE">👎 반대</button>
+          <button class="side-btn" data-side="NEUTRAL">중립</button>
+        </div>
+        <div class="comment-form">
+          <textarea id="commentContent" placeholder="토론 의견을 작성해주세요." rows="4"></textarea>
+          <button onclick="submitComment()" class="btn-primary">의견 남기기</button>
+        </div>
+      </div>
+    </div>
+    <div sec:authorize="isAnonymous()" class="comment-login-prompt">
+      <a href="/auth/login">로그인</a>하고 토론에 참여하세요
+    </div>
+
+    <div class="comment-list" id="commentList">
+      <div th:each="comment : ${comments}"
+           th:id="'comment-' + ${comment.id}"
+           th:data-side="${comment.side}"
+           th:class="${comment.side == 'AGREE'} ? 'comment-item side-agree' : (${comment.side == 'DISAGREE'} ? 'comment-item side-disagree' : 'comment-item side-neutral')">
+        <div class="comment-avatar">
+          <img th:if="${comment.authorImage != null}" th:src="${comment.authorImage}" alt="프로필">
+          <div th:if="${comment.authorImage == null}" class="avatar-placeholder"
+               th:text="${comment.authorName.substring(0,1)}">A</div>
+        </div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <strong class="comment-author" th:text="${comment.authorName}">작성자</strong>
+            <span th:if="${comment.side == 'AGREE'}" class="comment-side-badge badge-agree">👍 찬성</span>
+            <span th:if="${comment.side == 'DISAGREE'}" class="comment-side-badge badge-disagree">👎 반대</span>
+            <span th:if="${comment.side == 'NEUTRAL'}" class="comment-side-badge badge-neutral">중립</span>
+            <span class="comment-date" th:text="${#temporals.format(comment.createdAt,'MM.dd HH:mm')}">날짜</span>
+          </div>
+          <p class="comment-content" th:text="${comment.content}">내용</p>
+          <div class="comment-actions">
+            <button class="btn-reply" th:onclick="'toggleReply(' + ${comment.id} + ')'">답글</button>
+            <!-- 댓글 삭제: 본인 또는 Admin -->
+            <div sec:authorize="isAuthenticated()">
+              <button class="btn-comment-delete"
+                      th:if="${#authentication.principal.user.id == comment.authorId or isAdmin}"
+                      th:onclick="'deleteComment(' + ${comment.id} + ')'">삭제</button>
+            </div>
+          </div>
+          <div th:id="'reply-form-' + ${comment.id}" class="reply-form" style="display:none">
+            <textarea th:id="'reply-content-' + ${comment.id}" placeholder="답글을 입력하세요..." rows="3"></textarea>
+            <button th:onclick="'submitReply(' + ${comment.id} + ')'">답글 작성</button>
+          </div>
+          <div class="replies" th:if="${not #lists.isEmpty(comment.replies)}">
+            <div class="reply-item" th:each="reply : ${comment.replies}">
+              <div class="comment-avatar small">
+                <div class="avatar-placeholder" th:text="${reply.authorName.substring(0,1)}">A</div>
+              </div>
+              <div class="comment-body">
+                <div class="comment-header">
+                  <strong th:text="${reply.authorName}">작성자</strong>
+                  <span th:text="${#temporals.format(reply.createdAt,'MM.dd HH:mm')}">날짜</span>
+                </div>
+                <p th:text="${reply.content}">내용</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script th:inline="javascript">const POST_ID = [[${post.id}]];</script>
+<script th:src="@{/js/post-detail.js}"></script>
+</body>
+</html>

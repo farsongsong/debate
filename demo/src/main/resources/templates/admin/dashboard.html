@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('관리자 대시보드')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: nav}"></nav>
+<div class="admin-layout">
+  <aside class="admin-sidebar">
+    <h2 class="sidebar-title">관리자</h2>
+    <nav class="sidebar-nav">
+      <a href="/admin" class="sidebar-link active">대시보드</a>
+      <a href="/admin/pending" class="sidebar-link">
+        승인 대기
+        <span class="badge" th:if="${pendingCount > 0}" th:text="${pendingCount}">0</span>
+      </a>
+      <a href="/admin/posts" class="sidebar-link">게시글 관리</a>
+      <a href="/admin/users" class="sidebar-link">사용자 관리</a>
+    </nav>
+  </aside>
+  <main class="admin-main">
+    <h1 class="admin-title">대시보드</h1>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-num" th:text="${pendingCount}">0</div>
+        <div class="stat-label">승인 대기</div>
+      </div>
+      <div class="stat-card stat-warn">
+        <a href="/admin/pending" class="stat-link">대기 목록 보기 →</a>
+      </div>
+    </div>
+
+    <section class="admin-section">
+      <div class="admin-section-header">
+        <h2>승인 대기 중인 게시글</h2>
+        <a href="/admin/pending" class="btn-link">전체 보기</a>
+      </div>
+      <table class="admin-table">
+        <thead><tr><th>제목</th><th>작성자</th><th>제출일</th><th>관리</th></tr></thead>
+        <tbody>
+          <tr th:each="post : ${pendingPosts.content}">
+            <td th:text="${post.title}">제목</td>
+            <td th:text="${post.author.nickname != null} ? ${post.author.nickname} : ${post.author.username}">작성자</td>
+            <td th:text="${#temporals.format(post.createdAt,'MM.dd HH:mm')}">날짜</td>
+            <td class="td-actions">
+              <form th:action="@{/admin/posts/{id}/approve(id=${post.id})}" method="post" style="display:inline">
+                <button type="submit" class="btn-sm btn-approve">승인</button>
+              </form>
+              <form th:action="@{/admin/posts/{id}/reject(id=${post.id})}" method="post" style="display:inline">
+                <input type="hidden" name="reason" value="부적절한 내용">
+                <button type="submit" class="btn-sm btn-reject">거부</button>
+              </form>
+            </td>
+          </tr>
+          <tr th:if="${pendingPosts.empty}">
+            <td colspan="4" class="empty-td">대기 중인 게시글이 없습니다 ✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</div>
+</body>
+</html>
