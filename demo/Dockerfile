@@ -7,9 +7,6 @@ COPY gradle gradle
 COPY build.gradle settings.gradle ./
 RUN chmod +x gradlew
 
-# 의존성 캐시를 위해 소스 복사 전에 한 번 받아둠 (실패해도 무시)
-RUN ./gradlew dependencies --no-daemon || true
-
 COPY src src
 RUN ./gradlew bootJar --no-daemon -x test
 
